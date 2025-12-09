@@ -11,10 +11,9 @@ This is a Python package project for interrogating URLs, using modern tooling fo
   - `pyproject.toml` defines `interrogate` console script pointing to `interrogate.__main__:main`
 - **Core Components**: 
   - `validators.py`: URL validation utilities using `urllib.parse`
-  - `fetchers.py`: HTTP fetching, technology detection, and robots.txt parsing using `requests` and `urljoin`
-  - Validation flow: parse URL, check scheme and netloc, raise ValueError on invalid
-  - Fetching flow: GET request with 10s timeout, follow redirects, extract status/final URL/headers/body, detect techs via headers (Server/X-Powered-By/X-Generator) and body regex (jQuery/WordPress/Bootstrap/React/Vue.js/Angular/Django/Flask)
-  - Robots.txt flow: Construct /robots.txt URL, fetch, parse lines for User-agent/Disallow/Crawl-delay/Sitemap
+  - `fetchers.py`: HTTP fetching and orchestrating technology detection and robots.txt parsing
+  - `tech_detector.py`: Technology detection via headers and body regex patterns
+  - `robots.py`: Robots.txt fetching and parsing using `requests` and `urljoin`
 - **Data Flow**: CLI arguments `--url` (required), `--headers`, `--body`, `--robots`, `--all` → `validate_url()` → `fetch_url_info()` with include_* flags → JSON output with status_code, final_url, and conditionally headers, technologies, body_preview, robots_txt; errors as ValueError messages
 - **Why Package Structure**: Enables `pip install` for distribution, allows importing modules in tests and future extensions
 
@@ -29,14 +28,14 @@ This is a Python package project for interrogating URLs, using modern tooling fo
 - **Add dependencies**: Edit `pyproject.toml` dependencies array, then `uv sync`
 - **Add dev dependencies**: `uv add --dev <package>` (e.g., `uv add --dev ruff`)
 - **Run tests**: `uv run pytest` (configured in `pyproject.toml` with testpaths = ["tests"])
-- **Lint code**: `uv run ruff check` (uses `ruff` from dev dependencies)
+- **Lint code**: `uv run ruff check --fix` (uses `ruff` from dev dependencies)
 - **Format code**: `uv run ruff format`
 - **Type check**: `uv run ty check` (uses `ty` from dev dependencies)
 - **Environment setup**: `mise install` to install tools and create venv, `uv sync` to install packages
 
 ## Conventions
 - Use `uv` for all package operations (install, sync, etc.) and script execution (`uv run`) - do not use pip
-- Use `ruff` for linting (`uv run ruff check`) and formatting (`uv run ruff format`)
+- Use `ruff` for linting (`uv run ruff check --fix`) and formatting (`uv run ruff format`)
 - Use `ty` for type checking (`uv run ty check`)
 - Write typed Python code with type annotations for better type safety and IDE support
 - Project configuration in `pyproject.toml` following PEP 621
@@ -50,14 +49,18 @@ This is a Python package project for interrogating URLs, using modern tooling fo
 - `src/interrogate/__init__.py`: Package init with version
 - `src/interrogate/__main__.py`: CLI argument parsing and main logic
 - `src/interrogate/validators.py`: URL validation functions
-- `src/interrogate/fetchers.py`: URL fetching and technology detection
+- `src/interrogate/fetchers.py`: URL fetching orchestration
+- `src/interrogate/tech_detector.py`: Technology detection logic
+- `src/interrogate/robots.py`: Robots.txt handling
 - `tests/test_validators.py`: Unit tests for validators
 - `tests/test_fetchers.py`: Unit tests for fetchers with mocked requests
+- `tests/test_tech_detector.py`: Unit tests for tech detection
+- `tests/test_robots.py`: Unit tests for robots parsing
 - `pyproject.toml`: Project metadata, dependencies (requests), scripts, and tool configs
 - `mise.toml`: Tool configuration for uv
 - `.python-version`: Python version pin (implied by mise)
 
 ## Integration Points
 - HTTP requests via `requests` library with timeout and redirect handling
-- Technology detection: Regex patterns on response body for frameworks (jQuery, WordPress, Bootstrap, React, Vue.js, Angular, Django, Flask), header parsing for servers (Apache/Nginx/IIS/LiteSpeed/Caddy/Tomcat) and runtimes (PHP/ASP.NET/Node.js/Python)
+- Technology detection: Regex patterns on response body for frameworks (jQuery, WordPress, Bootstrap, React, Vue.js, Angular, Django, Flask), header parsing for servers (Apache/Nginx/IIS/LiteSpeed/Caddy/Tomcat), runtimes (PHP/ASP.NET/Node.js/Python), and CDNs (Cloudflare, Akamai, AWS CloudFront, Fastly, Azure CDN, Google Cloud CDN, Bunny CDN, Imperva, KeyCDN, StackPath, CDN77)
 - Robots.txt fetching and parsing: Construct robots.txt URL with `urljoin`, fetch with `requests`, parse for disallowed paths, sitemaps, crawl-delay, user-agents

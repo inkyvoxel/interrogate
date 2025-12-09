@@ -58,6 +58,6 @@ uv run interrogate --url https://example.com
 ## Development
 
 - Run tests: `uv run pytest`
-- Lint: `uv run ruff check`
+- Lint: `uv run ruff check --fix`
 - Format: `uv run ruff format`
 - Type check: `uv run ty check`
