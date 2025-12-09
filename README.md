@@ -7,8 +7,6 @@ Interrogate a URL for information.
 Clone the repository and install dependencies:
 
 ```bash
-git clone <repository-url>
-cd interrogate
 uv sync
 ```
 
@@ -23,14 +21,26 @@ uv run interrogate --url https://example.com
 
 ### Examples
 
-- Valid URL: `uv run interrogate --url http://example.com`  
-  Output: `URL: http://example.com`
+- Valid URL: `uv run interrogate --url https://example.com`  
+  Output (JSON):
+  ```json
+  {
+    "status_code": 200,
+    "final_url": "https://example.com",
+    "headers": {
+      "Content-Type": "text/html",
+      "Server": "nginx"
+    },
+    "technologies": ["Nginx"],
+    "body_preview": "<!doctype html><html..."
+  }
+  ```
 
-- Invalid URL (missing protocol): `uv run interrogate --url example.com`  
+- Invalid URL: `uv run interrogate --url example.com`  
   Output: `Invalid URL: Missing protocol (e.g., http:// or https://)`
 
-- Invalid URL (missing domain): `uv run interrogate --url http://`  
-  Output: `Invalid URL: Missing domain or network location`
+- Fetch error: `uv run interrogate --url https://invalid-domain.com`  
+  Output: `Failed to fetch URL: ...`
 
 ## Development
 

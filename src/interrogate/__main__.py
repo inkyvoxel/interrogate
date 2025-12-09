@@ -1,9 +1,10 @@
 """Command-line interface for interrogate."""
 
 import argparse
+import json
 import sys
 
-from .validators import validate_url
+from .fetchers import fetch_url_info
 
 
 def main():
@@ -13,12 +14,11 @@ def main():
     args = parser.parse_args()
 
     try:
-        validate_url(args.url)
+        result = fetch_url_info(args.url)
+        print(json.dumps(result, indent=2))
     except ValueError as e:
         print(e)
         sys.exit(1)
-
-    print(f"URL: {args.url}")
 
 
 if __name__ == "__main__":
