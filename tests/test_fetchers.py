@@ -268,6 +268,72 @@ class TestDetectTechnologies:
         techs = detect_technologies(headers, body)
         assert "Flask" in techs
 
+    def test_detect_cdn_cloudflare(self):
+        headers = {"CF-RAY": "1234567890abcdef"}
+        body = ""
+        techs = detect_technologies(headers, body)
+        assert "Cloudflare" in techs
+
+    def test_detect_cdn_akamai(self):
+        headers = {"X-Akamai-Transformed": "9 - 0 pmb=mRUM,1"}
+        body = ""
+        techs = detect_technologies(headers, body)
+        assert "Akamai" in techs
+
+    def test_detect_cdn_aws_cloudfront(self):
+        headers = {"X-Amz-Cf-Id": "abc123"}
+        body = ""
+        techs = detect_technologies(headers, body)
+        assert "AWS CloudFront" in techs
+
+    def test_detect_cdn_fastly(self):
+        headers = {"X-Served-By": "cache-iad-kiad7000123-IAD"}
+        body = ""
+        techs = detect_technologies(headers, body)
+        assert "Fastly" in techs
+
+    def test_detect_cdn_azure(self):
+        headers = {"X-Azure-Ref": "12345"}
+        body = ""
+        techs = detect_technologies(headers, body)
+        assert "Azure CDN" in techs
+
+    def test_detect_cdn_google_cloud(self):
+        headers = {"Server": "Google Frontend"}
+        body = ""
+        techs = detect_technologies(headers, body)
+        assert "Google Cloud CDN" in techs
+
+    def test_detect_cdn_bunny(self):
+        headers = {"Server": "BunnyCDN"}
+        body = ""
+        techs = detect_technologies(headers, body)
+        assert "Bunny CDN" in techs
+
+    def test_detect_cdn_imperva(self):
+        headers = {"X-Iinfo": "5-123456-123456"}
+        body = ""
+        techs = detect_technologies(headers, body)
+        assert "Imperva" in techs
+
+    def test_detect_cdn_keycdn(self):
+        headers = {"Server": "KeyCDN"}
+        body = ""
+        techs = detect_technologies(headers, body)
+        assert "KeyCDN" in techs
+
+    def test_detect_cdn_stackpath(self):
+        headers = {"Server": "StackPath"}
+        body = ""
+        techs = detect_technologies(headers, body)
+        assert "StackPath" in techs
+
+    def test_detect_cdn_cdn77(self):
+        headers = {"Server": "CDN77"}
+        body = ""
+        techs = detect_technologies(headers, body)
+        assert "CDN77" in techs
+
 
 class TestFetchRobotsTxt:
     @patch("src.interrogate.fetchers.requests.get")
