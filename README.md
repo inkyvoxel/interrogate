@@ -19,22 +19,35 @@ uv run interrogate --url https://example.com
 # or for development: uv run main.py --url https://example.com
 ```
 
+### Options
+
+- `--headers`: Include full response headers in the output.
+- `--body`: Include a preview of the response body in the output.
+- `--robots`: Fetch and parse the site's robots.txt file.
+- `--all`: Include all optional data (headers, body, and robots.txt).
+
 ### Examples
 
-- Valid URL: `uv run interrogate --url https://example.com`  
+- Basic info: `uv run interrogate --url https://example.com`  
   Output (JSON):
   ```json
   {
     "status_code": 200,
-    "final_url": "https://example.com",
-    "headers": {
-      "Content-Type": "text/html",
-      "Server": "nginx"
-    },
-    "technologies": ["Nginx"],
-    "body_preview": "<!doctype html><html..."
+    "final_url": "https://example.com"
   }
   ```
+
+- With headers: `uv run interrogate --url https://example.com --headers`  
+  Output includes `"headers": {...}` and `"technologies": [...]`.
+
+- With body: `uv run interrogate --url https://example.com --body`  
+  Output includes `"body_preview": "..."` and `"technologies": [...]`.
+
+- With robots.txt: `uv run interrogate --url https://example.com --robots`  
+  Output includes `"robots_txt": {"disallowed": [...], "sitemaps": [...], ...}`.
+
+- All data: `uv run interrogate --url https://example.com --all`  
+  Output includes all optional fields.
 
 - Invalid URL: `uv run interrogate --url example.com`  
   Output: `Invalid URL: Missing protocol (e.g., http:// or https://)`
@@ -47,4 +60,4 @@ uv run interrogate --url https://example.com
 - Run tests: `uv run pytest`
 - Lint: `uv run ruff check`
 - Format: `uv run ruff format`
-- Type check: `uv run ty`
+- Type check: `uv run ty check`

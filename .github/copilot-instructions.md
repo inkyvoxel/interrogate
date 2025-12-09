@@ -11,10 +11,11 @@ This is a Python package project for interrogating URLs, using modern tooling fo
   - `pyproject.toml` defines `interrogate` console script pointing to `interrogate.__main__:main`
 - **Core Components**: 
   - `validators.py`: URL validation utilities using `urllib.parse`
-  - `fetchers.py`: HTTP fetching and technology detection using `requests`
+  - `fetchers.py`: HTTP fetching, technology detection, and robots.txt parsing using `requests` and `urljoin`
   - Validation flow: parse URL, check scheme and netloc, raise ValueError on invalid
-  - Fetching flow: GET request with 10s timeout, follow redirects, extract status/final URL/headers/body, detect techs via headers (Server/X-Powered-By) and body regex (jQuery/WordPress/Bootstrap)
-- **Data Flow**: CLI argument `--url` → `validate_url()` → `fetch_url_info()` → JSON output with status_code, final_url, headers, technologies, body_preview; errors as ValueError messages
+  - Fetching flow: GET request with 10s timeout, follow redirects, extract status/final URL/headers/body, detect techs via headers (Server/X-Powered-By/X-Generator) and body regex (jQuery/WordPress/Bootstrap/React/Vue.js/Angular/Django/Flask)
+  - Robots.txt flow: Construct /robots.txt URL, fetch, parse lines for User-agent/Disallow/Crawl-delay/Sitemap
+- **Data Flow**: CLI arguments `--url` (required), `--headers`, `--body`, `--robots`, `--all` → `validate_url()` → `fetch_url_info()` with include_* flags → JSON output with status_code, final_url, and conditionally headers, technologies, body_preview, robots_txt; errors as ValueError messages
 - **Why Package Structure**: Enables `pip install` for distribution, allows importing modules in tests and future extensions
 
 ## Development Environment
@@ -36,7 +37,7 @@ This is a Python package project for interrogating URLs, using modern tooling fo
 ## Conventions
 - Use `uv` for all package operations (install, sync, etc.) and script execution (`uv run`) - do not use pip
 - Use `ruff` for linting (`uv run ruff check`) and formatting (`uv run ruff format`)
-- Use `ty` for type checking (`uv run ty`)
+- Use `ty` for type checking (`uv run ty check`)
 - Write typed Python code with type annotations for better type safety and IDE support
 - Project configuration in `pyproject.toml` following PEP 621
 - Version management via mise for reproducible environments
@@ -58,4 +59,5 @@ This is a Python package project for interrogating URLs, using modern tooling fo
 
 ## Integration Points
 - HTTP requests via `requests` library with timeout and redirect handling
-- Technology detection: Regex patterns on response body for frameworks (jQuery, WordPress, Bootstrap), header parsing for servers (Apache/Nginx/IIS) and runtimes (PHP/ASP.NET)
+- Technology detection: Regex patterns on response body for frameworks (jQuery, WordPress, Bootstrap, React, Vue.js, Angular, Django, Flask), header parsing for servers (Apache/Nginx/IIS/LiteSpeed/Caddy/Tomcat) and runtimes (PHP/ASP.NET/Node.js/Python)
+- Robots.txt fetching and parsing: Construct robots.txt URL with `urljoin`, fetch with `requests`, parse for disallowed paths, sitemaps, crawl-delay, user-agents

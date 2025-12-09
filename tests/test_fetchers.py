@@ -1,7 +1,11 @@
 import pytest
 from unittest.mock import patch, MagicMock
 from requests import RequestException
-from src.interrogate.fetchers import fetch_url_info, detect_technologies
+from src.interrogate.fetchers import (
+    fetch_url_info,
+    detect_technologies,
+    fetch_robots_txt,
+)
 
 
 class TestFetchUrlInfo:
@@ -16,7 +20,9 @@ class TestFetchUrlInfo:
         )
         mock_get.return_value = mock_response
 
-        result = fetch_url_info("https://example.com")
+        result = fetch_url_info(
+            "https://example.com", include_headers=True, include_body=True
+        )
 
         assert result["status_code"] == 200
         assert result["final_url"] == "https://example.com"
@@ -36,6 +42,140 @@ class TestFetchUrlInfo:
 
         with pytest.raises(ValueError, match="Failed to fetch URL"):
             fetch_url_info("https://example.com")
+
+
+class TestFetchUrlInfoFlags:
+    @patch("src.interrogate.fetchers.requests.get")
+    def test_include_headers(self, mock_get):
+        mock_response = MagicMock()
+        mock_response.status_code = 200
+        mock_response.url = "https://example.com"
+        mock_response.headers = {"Server": "nginx"}
+        mock_response.text = "body"
+        mock_get.return_value = mock_response
+
+        result = fetch_url_info("https://example.com", include_headers=True)
+
+        assert "headers" in result
+        assert "technologies" in result
+        assert "body_preview" not in result
+        assert "robots_txt" not in result
+
+    @patch("src.interrogate.fetchers.requests.get")
+    def test_include_body(self, mock_get):
+        mock_response = MagicMock()
+        mock_response.status_code = 200
+        mock_response.url = "https://example.com"
+        mock_response.headers = {}
+        mock_response.text = "body content"
+        mock_get.return_value = mock_response
+
+        result = fetch_url_info("https://example.com", include_body=True)
+
+        assert "body_preview" in result
+        assert "technologies" in result
+        assert "headers" not in result
+        assert "robots_txt" not in result
+
+    def test_include_robots_success(self):
+        # Mock for main URL and robots.txt
+        def mock_get(url, **kwargs):
+            if url == "https://example.com":
+                mock_resp = MagicMock()
+                mock_resp.status_code = 200
+                mock_resp.url = "https://example.com"
+                mock_resp.headers = {}
+                mock_resp.text = ""
+                return mock_resp
+            elif url == "https://example.com/robots.txt":
+                mock_resp = MagicMock()
+                mock_resp.status_code = 200
+                mock_resp.text = "User-agent: *\nDisallow: /private\nSitemap: https://example.com/sitemap.xml"
+                return mock_resp
+            else:
+                raise RequestException("Not found")
+
+        with patch("src.interrogate.fetchers.requests.get", side_effect=mock_get):
+            result = fetch_url_info("https://example.com", include_robots=True)
+
+        assert "robots_txt" in result
+        robots = result["robots_txt"]
+        assert "disallowed" in robots
+        assert "/private" in robots["disallowed"]
+        assert "sitemaps" in robots
+        assert "https://example.com/sitemap.xml" in robots["sitemaps"]
+        assert "user_agents" in robots
+        assert "*" in robots["user_agents"]
+
+    def test_include_robots_404(self):
+        def mock_get(url, **kwargs):
+            if url == "https://example.com":
+                mock_resp = MagicMock()
+                mock_resp.status_code = 200
+                mock_resp.url = "https://example.com"
+                mock_resp.headers = {}
+                mock_resp.text = ""
+                return mock_resp
+            elif url == "https://example.com/robots.txt":
+                mock_resp = MagicMock()
+                mock_resp.status_code = 404
+                return mock_resp
+            else:
+                raise RequestException("Not found")
+
+        with patch("src.interrogate.fetchers.requests.get", side_effect=mock_get):
+            result = fetch_url_info("https://example.com", include_robots=True)
+
+        assert "robots_txt" in result
+        assert "error" in result["robots_txt"]
+        assert "not found (status 404)" in result["robots_txt"]["error"]
+
+    def test_include_robots_malformed(self):
+        def mock_get(url, **kwargs):
+            if url == "https://example.com":
+                mock_resp = MagicMock()
+                mock_resp.status_code = 200
+                mock_resp.url = "https://example.com"
+                mock_resp.headers = {}
+                mock_resp.text = ""
+                return mock_resp
+            elif url == "https://example.com/robots.txt":
+                mock_resp = MagicMock()
+                mock_resp.status_code = 200
+                mock_resp.text = "Invalid robots.txt content"
+                return mock_resp
+            else:
+                raise RequestException("Not found")
+
+        with patch("src.interrogate.fetchers.requests.get", side_effect=mock_get):
+            result = fetch_url_info("https://example.com", include_robots=True)
+
+        assert "robots_txt" in result
+        robots = result["robots_txt"]
+        # Even malformed, it should parse what it can
+        assert "disallowed" in robots or "error" in robots
+
+    @patch("src.interrogate.fetchers.requests.get")
+    def test_include_all(self, mock_get):
+        # For simplicity, mock only main URL, assume robots fetch fails
+        mock_response = MagicMock()
+        mock_response.status_code = 200
+        mock_response.url = "https://example.com"
+        mock_response.headers = {"Server": "nginx"}
+        mock_response.text = "body"
+        mock_get.return_value = mock_response
+
+        result = fetch_url_info(
+            "https://example.com",
+            include_headers=True,
+            include_body=True,
+            include_robots=True,
+        )
+
+        assert "headers" in result
+        assert "body_preview" in result
+        assert "technologies" in result
+        assert "robots_txt" in result  # Even if error, it should be present
 
 
 class TestDetectTechnologies:
@@ -127,3 +267,33 @@ class TestDetectTechnologies:
         body = "flask application"
         techs = detect_technologies(headers, body)
         assert "Flask" in techs
+
+
+class TestFetchRobotsTxt:
+    @patch("src.interrogate.fetchers.requests.get")
+    def test_robots_success(self, mock_get):
+        mock_response = MagicMock()
+        mock_response.status_code = 200
+        mock_response.text = "user-agent: *\ndisallow: /private"
+        mock_get.return_value = mock_response
+
+        result = fetch_robots_txt("https://example.com")
+
+        assert "disallowed" in result
+        assert "/private" in result["disallowed"]
+        assert "sitemaps" in result
+        assert result["sitemaps"] == []
+        assert "user_agents" in result
+        assert "*" in result["user_agents"]
+        assert "raw" in result
+
+    @patch("src.interrogate.fetchers.requests.get")
+    def test_robots_404(self, mock_get):
+        mock_response = MagicMock()
+        mock_response.status_code = 404
+        mock_get.return_value = mock_response
+
+        result = fetch_robots_txt("https://example.com")
+
+        assert "error" in result
+        assert "not found" in result["error"]
