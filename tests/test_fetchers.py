@@ -33,7 +33,7 @@ class TestFetchUrlInfo:
         assert "WordPress" in result["technologies"]
         assert (
             result["body_preview"]
-            == "<html><script src='jquery.js'></script>WordPress site</html>"[:200]
+            == "<html><script src='jquery.js'></script>WordPress site</html>"
         )
 
     @patch("src.interrogate.fetchers.requests.get")

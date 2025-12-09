@@ -21,7 +21,7 @@ def fetch_url_info(
         headers = dict(response.headers)
         status_code = response.status_code
         final_url = response.url
-        body = response.text[:1000]  # Limit to first 1000 chars for analysis
+        body = response.text
         result = {
             "status_code": status_code,
             "final_url": final_url,
@@ -32,7 +32,7 @@ def fetch_url_info(
         if include_headers:
             result["headers"] = headers
         if include_body:
-            result["body_preview"] = body[:200]
+            result["body_preview"] = body
         if include_robots:
             robots_info = fetch_robots_txt(url)
             result["robots_txt"] = robots_info
