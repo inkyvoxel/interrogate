@@ -38,16 +38,30 @@ def detect_technologies(headers: Dict[str, str], body: str) -> list[str]:
         server = headers["Server"].lower()
         if "apache" in server:
             techs.append("Apache")
-        elif "nginx" in server:
+        if "nginx" in server:
             techs.append("Nginx")
-        elif "iis" in server:
+        if "iis" in server:
             techs.append("IIS")
+        if "litespeed" in server:
+            techs.append("LiteSpeed")
+        if "caddy" in server:
+            techs.append("Caddy")
+        if "tomcat" in server:
+            techs.append("Tomcat")
     if "X-Powered-By" in headers:
         powered_by = headers["X-Powered-By"].lower()
         if "php" in powered_by:
             techs.append("PHP")
         elif "asp.net" in powered_by:
             techs.append("ASP.NET")
+        elif "node.js" in powered_by:
+            techs.append("Node.js")
+        elif "python" in powered_by:
+            techs.append("Python")
+    if "X-Generator" in headers:
+        generator = headers["X-Generator"].lower()
+        if "wordpress" in generator:
+            techs.append("WordPress")
     # Body-based detection (simple regex)
     if re.search(r"<script[^>]*jquery", body, re.IGNORECASE):
         techs.append("jQuery")
@@ -55,4 +69,14 @@ def detect_technologies(headers: Dict[str, str], body: str) -> list[str]:
         techs.append("WordPress")
     if re.search(r"bootstrap", body, re.IGNORECASE):
         techs.append("Bootstrap")
+    if re.search(r"react", body, re.IGNORECASE):
+        techs.append("React")
+    if re.search(r"vue", body, re.IGNORECASE):
+        techs.append("Vue.js")
+    if re.search(r"angular", body, re.IGNORECASE):
+        techs.append("Angular")
+    if re.search(r"django", body, re.IGNORECASE):
+        techs.append("Django")
+    if re.search(r"flask", body, re.IGNORECASE):
+        techs.append("Flask")
     return list(set(techs))  # Deduplicate

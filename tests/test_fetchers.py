@@ -65,3 +65,65 @@ class TestDetectTechnologies:
         body = "jquery jquery"
         techs = detect_technologies(headers, body)
         assert len(techs) == len(set(techs))  # No duplicates
+
+    def test_detect_new_servers(self):
+        # Test LiteSpeed
+        headers = {"Server": "LiteSpeed"}
+        body = ""
+        techs = detect_technologies(headers, body)
+        assert "LiteSpeed" in techs
+
+        # Test Caddy
+        headers = {"Server": "Caddy"}
+        techs = detect_technologies(headers, body)
+        assert "Caddy" in techs
+
+        # Test Tomcat
+        headers = {"Server": "Apache Tomcat"}
+        techs = detect_technologies(headers, body)
+        assert "Tomcat" in techs
+
+    def test_detect_new_runtimes(self):
+        # Test Node.js
+        headers = {"X-Powered-By": "Node.js"}
+        body = ""
+        techs = detect_technologies(headers, body)
+        assert "Node.js" in techs
+
+        # Test Python
+        headers = {"X-Powered-By": "Python/3.9"}
+        techs = detect_technologies(headers, body)
+        assert "Python" in techs
+
+    def test_detect_wordpress_from_generator(self):
+        headers = {"X-Generator": "WordPress 5.8"}
+        body = ""
+        techs = detect_technologies(headers, body)
+        assert "WordPress" in techs
+
+    def test_detect_new_body_technologies(self):
+        headers = {}
+        # Test React
+        body = "react component"
+        techs = detect_technologies(headers, body)
+        assert "React" in techs
+
+        # Test Vue.js
+        body = "vue app"
+        techs = detect_technologies(headers, body)
+        assert "Vue.js" in techs
+
+        # Test Angular
+        body = "angular framework"
+        techs = detect_technologies(headers, body)
+        assert "Angular" in techs
+
+        # Test Django
+        body = "django powered"
+        techs = detect_technologies(headers, body)
+        assert "Django" in techs
+
+        # Test Flask
+        body = "flask application"
+        techs = detect_technologies(headers, body)
+        assert "Flask" in techs
