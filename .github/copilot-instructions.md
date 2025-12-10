@@ -21,7 +21,7 @@ Python package for interrogating URLs via CLI, fetching HTTP status, headers, te
 
 ## Key Workflows
 - **Run CLI (dev)**: `uv run main.py --url https://example.com --all`
-- **Run CLI (installed)**: `pip install` then `interrogate --url https://example.com`
+- **Run CLI (installed)**: `uv pip install .` then `interrogate --url https://example.com --all`
 - **Add deps**: Edit `pyproject.toml` dependencies, `uv sync`
 - **Add dev deps**: `uv add --dev <package>` (e.g., `uv add --dev ruff`)
 - **Run tests**: `uv run pytest` (testpaths=["tests"])
