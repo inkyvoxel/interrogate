@@ -32,7 +32,7 @@ class TestFetchRobotsTxt:
         assert "not found" in result["error"]
 
     @patch("src.interrogate.robots.requests.get")
-    @patch("src.interrogate.robots.time.sleep")
+    @patch("src.interrogate.utils.time.sleep")
     def test_robots_retry_on_429(self, mock_sleep, mock_get):
         mock_429_response = MagicMock()
         mock_429_response.status_code = 429

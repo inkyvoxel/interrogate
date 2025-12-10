@@ -15,8 +15,7 @@ uv sync
 Run the CLI with a URL:
 
 ```bash
-uv run interrogate --url https://example.com
-# or for development: uv run main.py --url https://example.com
+uv run main.py --url https://example.com --all
 ```
 
 ### Options
@@ -25,6 +24,7 @@ uv run interrogate --url https://example.com
 - `--body`: Include a preview of the response body in the output.
 - `--robots`: Fetch and parse the site's robots.txt file.
 - `--all`: Include all optional data (headers, body, and robots.txt).
+- `--help`: Show this help message and exit.
 
 ### Examples
 
@@ -54,6 +54,9 @@ uv run interrogate --url https://example.com
 
 - Fetch error: `uv run interrogate --url https://invalid-domain.com`  
   Output: `Failed to fetch URL: ...`
+
+- Help: `uv run interrogate --help`  
+  Output: Shows usage information.
 
 ## Development
 

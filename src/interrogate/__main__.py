@@ -9,18 +9,30 @@ from .fetchers import fetch_url_info
 
 def main():
     """Main entry point for the CLI."""
-    parser = argparse.ArgumentParser(description="Interrogate CLI app")
+    parser = argparse.ArgumentParser(
+        description="Interrogate a URL for information via CLI, fetching HTTP status, headers, technologies, body preview, and robots.txt parsing."
+    )
     parser.add_argument("--url", required=True, help="The URL to interrogate")
     parser.add_argument(
-        "--headers", action="store_true", help="Include response headers in output"
+        "--headers",
+        action="store_true",
+        help="Include full response headers in the output",
     )
     parser.add_argument(
-        "--body", action="store_true", help="Include body preview in output"
+        "--body",
+        action="store_true",
+        help="Include a preview of the response body in the output",
     )
     parser.add_argument(
-        "--robots", action="store_true", help="Fetch and parse robots.txt"
+        "--robots",
+        action="store_true",
+        help="Fetch and parse the site's robots.txt file",
     )
-    parser.add_argument("--all", action="store_true", help="Include all optional data")
+    parser.add_argument(
+        "--all",
+        action="store_true",
+        help="Include all optional data (headers, body, and robots.txt)",
+    )
     args = parser.parse_args()
 
     include_headers = args.headers or args.all
