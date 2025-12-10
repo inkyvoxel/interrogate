@@ -294,3 +294,113 @@ class TestDetectTechnologies:
         body = ""
         techs = detect_technologies(headers, body)
         assert {"name": "CDN77", "version": None} in techs
+
+    def test_html_meta_wordpress(self):
+        headers = {}
+        body = (
+            '<html><head><meta name="generator" content="WordPress 5.8"></head></html>'
+        )
+        techs = detect_technologies(headers, body)
+        assert {"name": "WordPress", "version": "5.8"} in techs
+
+    def test_html_meta_joomla(self):
+        headers = {}
+        body = '<html><head><meta name="generator" content="Joomla! - Open Source Content Management"></head></html>'
+        techs = detect_technologies(headers, body)
+        assert {"name": "Joomla", "version": None} in techs
+
+    def test_html_meta_drupal(self):
+        headers = {}
+        body = '<html><head><meta name="generator" content="Drupal 9"></head></html>'
+        techs = detect_technologies(headers, body)
+        assert {"name": "Drupal", "version": "9"} in techs
+
+    def test_html_script_jquery(self):
+        headers = {}
+        body = '<html><script src="https://code.jquery.com/jquery-3.6.0.min.js"></script></html>'
+        techs = detect_technologies(headers, body)
+        assert {"name": "jQuery", "version": "3.6.0"} in techs
+
+    def test_html_script_react(self):
+        headers = {}
+        body = '<html><script src="https://unpkg.com/react@18.2.0/umd/react.production.min.js"></script></html>'
+        techs = detect_technologies(headers, body)
+        assert {"name": "React", "version": "18.2.0"} in techs
+
+    def test_html_script_vue(self):
+        headers = {}
+        body = '<html><script src="https://cdn.jsdelivr.net/npm/vue@3.2.0/dist/vue.global.js"></script></html>'
+        techs = detect_technologies(headers, body)
+        assert {"name": "Vue.js", "version": "3.2.0"} in techs
+
+    def test_html_script_angular(self):
+        headers = {}
+        body = '<html><script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.8.2/angular.min.js"></script></html>'
+        techs = detect_technologies(headers, body)
+        assert {"name": "Angular", "version": "1.8.2"} in techs
+
+    def test_html_script_alpine(self):
+        headers = {}
+        body = '<html><script src="https://cdn.jsdelivr.net/npm/alpinejs@3.10.0/dist/cdn.min.js"></script></html>'
+        techs = detect_technologies(headers, body)
+        assert {"name": "Alpine.js", "version": "3.10.0"} in techs
+
+    def test_html_script_bootstrap(self):
+        headers = {}
+        body = '<html><script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script></html>'
+        techs = detect_technologies(headers, body)
+        assert {"name": "Bootstrap", "version": "4.5.2"} in techs
+
+    def test_html_google_analytics(self):
+        headers = {}
+        body = '<html><script src="https://www.googletagmanager.com/gtag/js?id=GA_TRACKING_ID"></script></html>'
+        techs = detect_technologies(headers, body)
+        assert {"name": "Google Analytics", "version": None} in techs
+
+    def test_html_facebook_pixel(self):
+        headers = {}
+        body = '<html><script src="https://connect.facebook.net/en_US/fbevents.js"></script></html>'
+        techs = detect_technologies(headers, body)
+        assert {"name": "Facebook Pixel", "version": None} in techs
+
+    def test_html_hotjar(self):
+        headers = {}
+        body = '<html><script src="https://static.hotjar.com/c/hotjar-123456.js?sv=6"></script></html>'
+        techs = detect_technologies(headers, body)
+        assert {"name": "Hotjar", "version": None} in techs
+
+    def test_html_shopify(self):
+        headers = {}
+        body = '<html><script src="https://cdn.shopify.com/shopifycloud/checkout-web/assets/checkout.js"></script></html>'
+        techs = detect_technologies(headers, body)
+        assert {"name": "Shopify", "version": None} in techs
+
+    def test_html_magento(self):
+        headers = {}
+        body = '<html><script src="https://magento.com/static/version1234567890/adminhtml/Magento/backend/en_US/requirejs/require.js"></script></html>'
+        techs = detect_technologies(headers, body)
+        assert {"name": "Magento", "version": None} in techs
+
+    def test_html_prestashop(self):
+        headers = {}
+        body = '<html><script src="https://prestashop.com/themes/default/js/prestashop.js"></script></html>'
+        techs = detect_technologies(headers, body)
+        assert {"name": "PrestaShop", "version": None} in techs
+
+    def test_non_html_fallback(self):
+        headers = {}
+        body = '{"react": "library"}'
+        techs = detect_technologies(headers, body)
+        assert {"name": "React", "version": None} in techs
+
+    def test_large_body_limit(self):
+        headers = {}
+        body = (
+            '<html><head><meta name="generator" content="WordPress 5.8"></head></html>'
+            + "x" * 200000
+        )
+        techs = detect_technologies(headers, body)
+        assert {
+            "name": "WordPress",
+            "version": "5.8",
+        } in techs  # Should still parse first 100KB

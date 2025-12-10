@@ -1,5 +1,6 @@
 import re
 from typing import Dict, List, Optional
+from bs4 import BeautifulSoup
 
 
 def detect_technologies(
@@ -158,7 +159,125 @@ def detect_technologies(
                 techs.append({"name": cdn_name, "version": None})
                 break  # Found this CDN, skip to next
 
-    # Body-based detection (keep simple for now, as focus is headers)
+    # HTML-based detection with BeautifulSoup
+    is_html = re.search(r"<!DOCTYPE|<html", body[:1000], re.IGNORECASE)
+    if is_html:
+        limited_body = body[: 100 * 1024]  # Limit to 100KB
+        try:
+            soup = BeautifulSoup(limited_body, "lxml")
+
+            # Meta tags for CMSs
+            for meta in soup.find_all("meta"):
+                name = meta.get("name", "").lower()
+                content = meta.get("content", "").lower()
+                if name == "generator":
+                    if "wordpress" in content:
+                        version = re.search(r"(\d+(?:\.\d+)*)", content)
+                        techs.append(
+                            {
+                                "name": "WordPress",
+                                "version": version.group(1) if version else None,
+                            }
+                        )
+                    elif "joomla" in content:
+                        version = re.search(r"(\d+(?:\.\d+)*)", content)
+                        techs.append(
+                            {
+                                "name": "Joomla",
+                                "version": version.group(1) if version else None,
+                            }
+                        )
+                    elif "drupal" in content:
+                        version = re.search(r"(\d+(?:\.\d+)*)", content)
+                        techs.append(
+                            {
+                                "name": "Drupal",
+                                "version": version.group(1) if version else None,
+                            }
+                        )
+                    elif "wix" in content:
+                        techs.append({"name": "Wix", "version": None})
+                    elif "squarespace" in content:
+                        techs.append({"name": "Squarespace", "version": None})
+
+            # Script sources (limit to 30)
+            scripts = soup.find_all("script", src=True)[:30]
+            for script in scripts:
+                src = script["src"].lower()
+                if "jquery" in src:
+                    version = re.search(r"jquery-(\d+(?:\.\d+)*)", src)
+                    techs.append(
+                        {
+                            "name": "jQuery",
+                            "version": version.group(1) if version else None,
+                        }
+                    )
+                elif "react" in src or "__next_data__" in limited_body:
+                    version = re.search(
+                        r"react(?:\.|@)(\d+(?:\.\d+)*)", src
+                    ) or re.search(r'"version":"(\d+(?:\.\d+)*)"', limited_body)
+                    techs.append(
+                        {
+                            "name": "React",
+                            "version": version.group(1) if version else None,
+                        }
+                    )
+                elif "vue" in src:
+                    version = re.search(r"vue(?:\.|@)(\d+(?:\.\d+)*)", src)
+                    techs.append(
+                        {
+                            "name": "Vue.js",
+                            "version": version.group(1) if version else None,
+                        }
+                    )
+                elif "angular" in src:
+                    version = re.search(r"angularjs/(\d+(?:\.\d+)*)", src) or re.search(
+                        r"angular(?:\.|@)(\d+(?:\.\d+)*)", src
+                    )
+                    techs.append(
+                        {
+                            "name": "Angular",
+                            "version": version.group(1) if version else None,
+                        }
+                    )
+                elif "alpine" in src:
+                    version = re.search(r"alpinejs@(\d+(?:\.\d+)*)", src) or re.search(
+                        r"alpine(?:\.|@)(\d+(?:\.\d+)*)", src
+                    )
+                    techs.append(
+                        {
+                            "name": "Alpine.js",
+                            "version": version.group(1) if version else None,
+                        }
+                    )
+                elif "bootstrap" in src:
+                    version = re.search(r"bootstrap/(\d+(?:\.\d+)*)", src) or re.search(
+                        r"bootstrap(?:\.|@)(\d+(?:\.\d+)*)", src
+                    )
+                    techs.append(
+                        {
+                            "name": "Bootstrap",
+                            "version": version.group(1) if version else None,
+                        }
+                    )
+                elif (
+                    "googletagmanager" in src or "analytics.js" in src or "gtag" in src
+                ):
+                    techs.append({"name": "Google Analytics", "version": None})
+                elif "facebook" in src and "fbevents" in src:
+                    techs.append({"name": "Facebook Pixel", "version": None})
+                elif "hotjar" in src:
+                    techs.append({"name": "Hotjar", "version": None})
+                elif "shopify" in src:
+                    techs.append({"name": "Shopify", "version": None})
+                elif "magento" in src:
+                    techs.append({"name": "Magento", "version": None})
+                elif "prestashop" in src:
+                    techs.append({"name": "PrestaShop", "version": None})
+        except Exception:
+            pass  # Fallback to regex
+
+    # Body-based detection (expanded with regex fallbacks)
     body_patterns = {
         "jQuery": re.compile(r"\bjquery\b", re.IGNORECASE),
         "WordPress": re.compile(r"\bwordpress\b", re.IGNORECASE),
@@ -168,6 +287,19 @@ def detect_technologies(
         "Angular": re.compile(r"\bangular\b", re.IGNORECASE),
         "Django": re.compile(r"\bdjango\b", re.IGNORECASE),
         "Flask": re.compile(r"\bflask\b", re.IGNORECASE),
+        "Joomla": re.compile(r"\bjoomla\b", re.IGNORECASE),
+        "Drupal": re.compile(r"\bdrupal\b", re.IGNORECASE),
+        "Wix": re.compile(r"\bwix\b", re.IGNORECASE),
+        "Squarespace": re.compile(r"\bsquarespace\b", re.IGNORECASE),
+        "Alpine.js": re.compile(r"\balpine\b", re.IGNORECASE),
+        "Google Analytics": re.compile(
+            r"\bgoogle.*analytics\b|\bgtag\b", re.IGNORECASE
+        ),
+        "Facebook Pixel": re.compile(r"\bfacebook.*pixel\b", re.IGNORECASE),
+        "Hotjar": re.compile(r"\bhotjar\b", re.IGNORECASE),
+        "Shopify": re.compile(r"\bshopify\b", re.IGNORECASE),
+        "Magento": re.compile(r"\bmagento\b", re.IGNORECASE),
+        "PrestaShop": re.compile(r"\bprestashop\b", re.IGNORECASE),
     }
 
     for name, pattern in body_patterns.items():

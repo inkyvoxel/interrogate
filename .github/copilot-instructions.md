@@ -56,11 +56,11 @@ This is a Python package project for interrogating URLs, using modern tooling fo
 - `tests/test_fetchers.py`: Unit tests for fetchers with mocked requests
 - `tests/test_tech_detector.py`: Unit tests for tech detection
 - `tests/test_robots.py`: Unit tests for robots parsing
-- `pyproject.toml`: Project metadata, dependencies (requests), scripts, and tool configs
+- `pyproject.toml`: Project metadata, dependencies (requests, beautifulsoup4, lxml), scripts, and tool configs
 - `mise.toml`: Tool configuration for uv
 - `.python-version`: Python version pin (implied by mise)
 
 ## Integration Points
 - HTTP requests via `requests` library with timeout and redirect handling
-- Technology detection: Regex patterns on response body for frameworks (jQuery, WordPress, Bootstrap, React, Vue.js, Angular, Django, Flask), header parsing for servers (Apache/Nginx/IIS/LiteSpeed/Caddy/Tomcat), runtimes (PHP/ASP.NET/Node.js/Python), and CDNs (Cloudflare, Akamai, AWS CloudFront, Fastly, Azure CDN, Google Cloud CDN, Bunny CDN, Imperva, KeyCDN, StackPath, CDN77)
+- Technology detection: Regex patterns on headers and response body, plus BeautifulSoup HTML parsing for frameworks (jQuery, WordPress, Bootstrap, React, Vue.js, Angular, Django, Flask), header parsing for servers (Apache/Nginx/IIS/LiteSpeed/Caddy/Tomcat), runtimes (PHP/ASP.NET/Node.js/Python), and CDNs (Cloudflare, Akamai, AWS CloudFront, Fastly, Azure CDN, Google Cloud CDN, Bunny CDN, Imperva, KeyCDN, StackPath, CDN77)
 - Robots.txt fetching and parsing: Construct robots.txt URL with `urljoin`, fetch with `requests`, parse for disallowed paths, sitemaps, crawl-delay, user-agents
