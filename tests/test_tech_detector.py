@@ -404,3 +404,31 @@ class TestDetectTechnologies:
             "name": "WordPress",
             "version": "5.8",
         } in techs  # Should still parse first 100KB
+
+    def test_detect_from_robots_wordpress(self):
+        headers = {}
+        body = ""
+        robots_txt = {"content": "User-agent: *\nDisallow: /wp-admin\n"}
+        techs = detect_technologies(headers, body, robots_txt)
+        assert {"name": "WordPress", "version": None} in techs
+
+    def test_detect_from_robots_bitrix(self):
+        headers = {}
+        body = ""
+        robots_txt = {"content": "User-agent: *\nDisallow: /bitrix/\n"}
+        techs = detect_technologies(headers, body, robots_txt)
+        assert {"name": "1C-Bitrix", "version": None} in techs
+
+    def test_no_detect_from_robots_error(self):
+        headers = {}
+        body = ""
+        robots_txt = {"error": "Not found"}
+        techs = detect_technologies(headers, body, robots_txt)
+        assert techs == []
+
+    def test_no_detect_from_robots_missing_content(self):
+        headers = {}
+        body = ""
+        robots_txt = {"disallowed": ["/"]}
+        techs = detect_technologies(headers, body, robots_txt)
+        assert techs == []

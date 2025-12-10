@@ -16,6 +16,12 @@ def fetch_url_info(
     Raises ValueError on fetch errors.
     """
     validate_url(url)  # Reuse existing validation
+
+    # Fetch robots if needed for tech detection or output
+    robots_info = None
+    if include_robots or include_headers or include_body:
+        robots_info = fetch_robots_txt(url)
+
     try:
         response = requests.get(url, timeout=10, allow_redirects=True)
         headers = dict(response.headers)
@@ -27,14 +33,13 @@ def fetch_url_info(
             "final_url": final_url,
         }
         if include_headers or include_body:
-            technologies = detect_technologies(headers, body)
+            technologies = detect_technologies(headers, body, robots_info)
             result["technologies"] = technologies
         if include_headers:
             result["headers"] = headers
         if include_body:
             result["body_preview"] = body
         if include_robots:
-            robots_info = fetch_robots_txt(url)
             result["robots_txt"] = robots_info
         return result
     except requests.RequestException as e:

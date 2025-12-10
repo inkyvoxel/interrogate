@@ -1,10 +1,10 @@
 import re
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Any
 from bs4 import BeautifulSoup
 
 
 def detect_technologies(
-    headers: Dict[str, str], body: str
+    headers: Dict[str, str], body: str, robots_txt: Optional[Dict[str, Any]] = None
 ) -> List[Dict[str, Optional[str]]]:
     """
     Detect technologies from headers and body with version extraction.
@@ -305,6 +305,17 @@ def detect_technologies(
     for name, pattern in body_patterns.items():
         if pattern.search(body):
             techs.append({"name": name, "version": None})
+
+    # Robots.txt-based detection
+    if robots_txt and "content" in robots_txt:
+        content = robots_txt["content"]
+        robots_patterns = {
+            "WordPress": re.compile(r"disallow:\s*/wp-admin", re.IGNORECASE),
+            "1C-Bitrix": re.compile(r"disallow:\s*/bitrix/", re.IGNORECASE),
+        }
+        for name, pattern in robots_patterns.items():
+            if pattern.search(content):
+                techs.append({"name": name, "version": None})
 
     # Deduplicate by name
     seen = set()
