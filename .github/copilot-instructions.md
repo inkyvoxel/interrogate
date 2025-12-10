@@ -12,7 +12,7 @@ Python package for interrogating URLs via CLI, fetching HTTP status, headers, te
   - `tech_detector.py`: Detects technologies via regex on headers/body and BeautifulSoup HTML parsing (e.g., jQuery, WordPress, React).
   - `robots.py`: Fetches/parses robots.txt with `urljoin` and `requests`.
   - `utils.py`: Retry logic for GET requests on 429/503.
-- **Data Flow**: CLI `--url` (required), `--headers`, `--body`, `--robots`, `--all` → `validate_url()` → `fetch_url_info()` with include_* flags → JSON output (status_code, final_url, conditional headers/technologies/body_preview/robots_txt); errors as ValueError.
+- **Data Flow**: CLI `--url` (required), `--headers`, `--body`, `--robots`, `--all` → `validate_url()` → `fetch_url_info()` with include_* flags → JSON output (status_code, final_url, conditional headers/technologies/body/robots_txt); errors as ValueError.
 
 ## Development Environment
 - Python >=3.14 (via `pyproject.toml`).

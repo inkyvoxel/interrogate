@@ -69,7 +69,7 @@ The tool outputs JSON to stdout.
 {
   "status_code": 200,
   "final_url": "https://example.com",
-  "body_preview": "<!DOCTYPE html><html><head><title>Example</title></head><body>...</body></html>",
+  "body": "<!DOCTYPE html><html><head><title>Example</title></head><body>...</body></html>",
   "technologies": [
     {"name": "jQuery", "version": "3.6.0"}
   ]

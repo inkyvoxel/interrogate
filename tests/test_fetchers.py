@@ -31,7 +31,7 @@ class TestFetchUrlInfo:
         assert {"name": "PHP", "version": None} in result["technologies"]
         assert {"name": "jQuery", "version": None} in result["technologies"]
         assert {"name": "WordPress", "version": None} in result["technologies"]
-        assert result["body_preview"] == body_text
+        assert result["body"] == body_text
 
     @patch("src.interrogate.fetchers.requests.get")
     def test_fetch_error(self, mock_get):
@@ -57,7 +57,7 @@ class TestFetchUrlInfo:
         result = fetch_url_info("https://example.com", include_body=True)
 
         assert result["status_code"] == 404
-        assert result["body_preview"] is None
+        assert result["body"] is None
 
     @patch("src.interrogate.fetchers.requests.get")
     @patch("src.interrogate.fetchers.time.sleep")
@@ -84,7 +84,7 @@ class TestFetchUrlInfo:
 
         assert mock_sleep.called
         assert result["status_code"] == 200
-        assert result["body_preview"] == "OK"
+        assert result["body"] == "OK"
 
     @patch("src.interrogate.fetchers.requests.get")
     @patch("src.interrogate.fetchers.time.sleep")
@@ -121,7 +121,7 @@ class TestFetchUrlInfoFlags:
 
         assert "headers" in result
         assert "technologies" in result
-        assert "body_preview" not in result
+        assert "body" not in result
         assert "robots_txt" not in result
 
     @patch("src.interrogate.fetchers.requests.get")
@@ -135,7 +135,7 @@ class TestFetchUrlInfoFlags:
 
         result = fetch_url_info("https://example.com", include_body=True)
 
-        assert "body_preview" in result
+        assert "body" in result
         assert "technologies" in result
         assert "headers" not in result
         assert "robots_txt" not in result
@@ -245,6 +245,6 @@ class TestFetchUrlInfoFlags:
         )
 
         assert "headers" in result
-        assert "body_preview" in result
+        assert "body" in result
         assert "technologies" in result
         assert "robots_txt" in result  # Even if error, it should be present

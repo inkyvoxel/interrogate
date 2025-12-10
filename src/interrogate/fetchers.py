@@ -67,9 +67,9 @@ def fetch_url_info(
             result["headers"] = headers
         if include_body:
             if status_code == 200 and body is not None:
-                result["body_preview"] = body
+                result["body"] = body
             else:
-                result["body_preview"] = None
+                result["body"] = None
         if include_robots:
             result["robots_txt"] = robots_info
         return result
