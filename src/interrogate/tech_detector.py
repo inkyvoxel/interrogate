@@ -4,7 +4,9 @@ from bs4 import BeautifulSoup
 
 
 def detect_technologies(
-    headers: Dict[str, str], body: str, robots_txt: Optional[Dict[str, Any]] = None
+    headers: Dict[str, str],
+    body: Optional[str],
+    robots_txt: Optional[Dict[str, Any]] = None,
 ) -> List[Dict[str, Optional[str]]]:
     """
     Detect technologies from headers and body with version extraction.
@@ -160,16 +162,16 @@ def detect_technologies(
                 break  # Found this CDN, skip to next
 
     # HTML-based detection with BeautifulSoup
-    is_html = re.search(r"<!DOCTYPE|<html", body[:1000], re.IGNORECASE)
-    if is_html:
-        limited_body = body[: 100 * 1024]  # Limit to 100KB
-        try:
+    if body:
+        is_html = re.search(r"<!DOCTYPE|<html", body[:1000], re.IGNORECASE)
+        if is_html:
+            limited_body = body[: 100 * 1024]  # Limit to 100KB
             soup = BeautifulSoup(limited_body, "lxml")
 
             # Meta tags for CMSs
             for meta in soup.find_all("meta"):
-                name = meta.get("name", "").lower()
-                content = meta.get("content", "").lower()
+                name = str(meta.get("name", "")).lower()
+                content = str(meta.get("content", "")).lower()
                 if name == "generator":
                     if "wordpress" in content:
                         version = re.search(r"(\d+(?:\.\d+)*)", content)
@@ -203,7 +205,7 @@ def detect_technologies(
             # Script sources (limit to 30)
             scripts = soup.find_all("script", src=True)[:30]
             for script in scripts:
-                src = script["src"].lower()
+                src = str(script["src"]).lower()
                 if "jquery" in src:
                     version = re.search(r"jquery-(\d+(?:\.\d+)*)", src)
                     techs.append(
@@ -274,37 +276,36 @@ def detect_technologies(
                     techs.append({"name": "Magento", "version": None})
                 elif "prestashop" in src:
                     techs.append({"name": "PrestaShop", "version": None})
-        except Exception:
-            pass  # Fallback to regex
 
     # Body-based detection (expanded with regex fallbacks)
-    body_patterns = {
-        "jQuery": re.compile(r"\bjquery\b", re.IGNORECASE),
-        "WordPress": re.compile(r"\bwordpress\b", re.IGNORECASE),
-        "Bootstrap": re.compile(r"\bbootstrap\b", re.IGNORECASE),
-        "React": re.compile(r"\breact\b", re.IGNORECASE),
-        "Vue.js": re.compile(r"\bvue\b", re.IGNORECASE),
-        "Angular": re.compile(r"\bangular\b", re.IGNORECASE),
-        "Django": re.compile(r"\bdjango\b", re.IGNORECASE),
-        "Flask": re.compile(r"\bflask\b", re.IGNORECASE),
-        "Joomla": re.compile(r"\bjoomla\b", re.IGNORECASE),
-        "Drupal": re.compile(r"\bdrupal\b", re.IGNORECASE),
-        "Wix": re.compile(r"\bwix\b", re.IGNORECASE),
-        "Squarespace": re.compile(r"\bsquarespace\b", re.IGNORECASE),
-        "Alpine.js": re.compile(r"\balpine\b", re.IGNORECASE),
-        "Google Analytics": re.compile(
-            r"\bgoogle.*analytics\b|\bgtag\b", re.IGNORECASE
-        ),
-        "Facebook Pixel": re.compile(r"\bfacebook.*pixel\b", re.IGNORECASE),
-        "Hotjar": re.compile(r"\bhotjar\b", re.IGNORECASE),
-        "Shopify": re.compile(r"\bshopify\b", re.IGNORECASE),
-        "Magento": re.compile(r"\bmagento\b", re.IGNORECASE),
-        "PrestaShop": re.compile(r"\bprestashop\b", re.IGNORECASE),
-    }
+    if body:
+        body_patterns = {
+            "jQuery": re.compile(r"\bjquery\b", re.IGNORECASE),
+            "WordPress": re.compile(r"\bwordpress\b", re.IGNORECASE),
+            "Bootstrap": re.compile(r"\bbootstrap\b", re.IGNORECASE),
+            "React": re.compile(r"\breact\b", re.IGNORECASE),
+            "Vue.js": re.compile(r"\bvue\b", re.IGNORECASE),
+            "Angular": re.compile(r"\bangular\b", re.IGNORECASE),
+            "Django": re.compile(r"\bdjango\b", re.IGNORECASE),
+            "Flask": re.compile(r"\bflask\b", re.IGNORECASE),
+            "Joomla": re.compile(r"\bjoomla\b", re.IGNORECASE),
+            "Drupal": re.compile(r"\bdrupal\b", re.IGNORECASE),
+            "Wix": re.compile(r"\bwix\b", re.IGNORECASE),
+            "Squarespace": re.compile(r"\bsquarespace\b", re.IGNORECASE),
+            "Alpine.js": re.compile(r"\balpine\b", re.IGNORECASE),
+            "Google Analytics": re.compile(
+                r"\bgoogle.*analytics\b|\bgtag\b", re.IGNORECASE
+            ),
+            "Facebook Pixel": re.compile(r"\bfacebook.*pixel\b", re.IGNORECASE),
+            "Hotjar": re.compile(r"\bhotjar\b", re.IGNORECASE),
+            "Shopify": re.compile(r"\bshopify\b", re.IGNORECASE),
+            "Magento": re.compile(r"\bmagento\b", re.IGNORECASE),
+            "PrestaShop": re.compile(r"\bprestashop\b", re.IGNORECASE),
+        }
 
-    for name, pattern in body_patterns.items():
-        if pattern.search(body):
-            techs.append({"name": name, "version": None})
+        for name, pattern in body_patterns.items():
+            if pattern.search(body):
+                techs.append({"name": name, "version": None})
 
     # Robots.txt-based detection
     if robots_txt and "content" in robots_txt:

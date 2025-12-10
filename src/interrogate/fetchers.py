@@ -1,5 +1,6 @@
 from typing import Dict, Any
 import requests
+import time
 from .validators import validate_url
 from .tech_detector import detect_technologies
 from .robots import fetch_robots_txt
@@ -21,13 +22,50 @@ def fetch_url_info(
     robots_info = None
     if include_robots or include_headers or include_body:
         robots_info = fetch_robots_txt(url)
+        if (
+            "crawl_delay" in robots_info
+            and robots_info["crawl_delay"] is not None
+            and robots_info["crawl_delay"] > 0
+        ):
+            time.sleep(robots_info["crawl_delay"])
 
     try:
-        response = requests.get(url, timeout=10, allow_redirects=True)
+        response = requests.get(
+            url,
+            timeout=10,
+            allow_redirects=True,
+            headers={
+                "User-Agent": "Interrogate/1.0 (+https://github.com/inkyvoxel/interrogate)"
+            },
+            stream=True,
+        )
+        if response.status_code in [429, 503]:
+            time.sleep(2)
+            response = requests.get(
+                url,
+                timeout=10,
+                allow_redirects=True,
+                headers={
+                    "User-Agent": "Interrogate/1.0 (+https://github.com/inkyvoxel/interrogate)"
+                },
+                stream=True,
+            )
         headers = dict(response.headers)
         status_code = response.status_code
         final_url = response.url
-        body = response.text
+        # Cap body download at 150KB
+        max_size = 150 * 1024
+        content = b""
+        for chunk in response.iter_content(chunk_size=1024):
+            content += chunk
+            if len(content) > max_size:
+                content = content[:max_size]
+                break
+        # Attempt to decode as text
+        try:
+            body = content.decode("utf-8", errors="ignore")
+        except UnicodeDecodeError:
+            body = None  # Non-text content
         result = {
             "status_code": status_code,
             "final_url": final_url,
@@ -38,7 +76,10 @@ def fetch_url_info(
         if include_headers:
             result["headers"] = headers
         if include_body:
-            result["body_preview"] = body
+            if status_code == 200 and body is not None:
+                result["body_preview"] = body
+            else:
+                result["body_preview"] = None
         if include_robots:
             result["robots_txt"] = robots_info
         return result

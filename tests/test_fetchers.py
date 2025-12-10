@@ -7,14 +7,18 @@ from src.interrogate.fetchers import fetch_url_info
 class TestFetchUrlInfo:
     @patch("src.interrogate.fetchers.requests.get")
     def test_successful_fetch(self, mock_get):
-        mock_response = MagicMock()
-        mock_response.status_code = 200
-        mock_response.url = "https://example.com"
-        mock_response.headers = {"Server": "nginx", "X-Powered-By": "PHP"}
-        mock_response.text = (
-            "<html><script src='jquery.js'></script>WordPress site</html>"
-        )
-        mock_get.return_value = mock_response
+        # Mock robots.txt response
+        mock_robots_response = MagicMock()
+        mock_robots_response.status_code = 200
+        mock_robots_response.text = "User-agent: *\nDisallow: /admin\n"
+        # Mock main response
+        mock_main_response = MagicMock()
+        mock_main_response.status_code = 200
+        mock_main_response.url = "https://example.com"
+        mock_main_response.headers = {"Server": "nginx", "X-Powered-By": "PHP"}
+        body_text = "<html><script src='jquery.js'></script>WordPress site</html>"
+        mock_main_response.iter_content.return_value = iter([body_text.encode("utf-8")])
+        mock_get.side_effect = [mock_robots_response, mock_main_response]
 
         result = fetch_url_info(
             "https://example.com", include_headers=True, include_body=True
@@ -27,10 +31,7 @@ class TestFetchUrlInfo:
         assert {"name": "PHP", "version": None} in result["technologies"]
         assert {"name": "jQuery", "version": None} in result["technologies"]
         assert {"name": "WordPress", "version": None} in result["technologies"]
-        assert (
-            result["body_preview"]
-            == "<html><script src='jquery.js'></script>WordPress site</html>"
-        )
+        assert result["body_preview"] == body_text
 
     @patch("src.interrogate.fetchers.requests.get")
     def test_fetch_error(self, mock_get):
@@ -38,6 +39,72 @@ class TestFetchUrlInfo:
 
         with pytest.raises(ValueError, match="Failed to fetch URL"):
             fetch_url_info("https://example.com")
+
+    @patch("src.interrogate.fetchers.requests.get")
+    def test_non_200_response(self, mock_get):
+        # Mock robots
+        mock_robots_response = MagicMock()
+        mock_robots_response.status_code = 200
+        mock_robots_response.text = "User-agent: *\nDisallow: /admin\n"
+        # Mock main 404
+        mock_main_response = MagicMock()
+        mock_main_response.status_code = 404
+        mock_main_response.url = "https://example.com"
+        mock_main_response.headers = {}
+        mock_main_response.iter_content.return_value = iter([b"Not found"])
+        mock_get.side_effect = [mock_robots_response, mock_main_response]
+
+        result = fetch_url_info("https://example.com", include_body=True)
+
+        assert result["status_code"] == 404
+        assert result["body_preview"] is None
+
+    @patch("src.interrogate.fetchers.requests.get")
+    @patch("src.interrogate.fetchers.time.sleep")
+    def test_retry_on_429(self, mock_sleep, mock_get):
+        # Mock robots
+        mock_robots_response = MagicMock()
+        mock_robots_response.status_code = 200
+        mock_robots_response.text = "User-agent: *\nDisallow: /admin\n"
+        # Mock main 429 then 200
+        mock_429_response = MagicMock()
+        mock_429_response.status_code = 429
+        mock_200_response = MagicMock()
+        mock_200_response.status_code = 200
+        mock_200_response.url = "https://example.com"
+        mock_200_response.headers = {}
+        mock_200_response.iter_content.return_value = iter([b"OK"])
+        mock_get.side_effect = [
+            mock_robots_response,
+            mock_429_response,
+            mock_200_response,
+        ]
+
+        result = fetch_url_info("https://example.com", include_body=True)
+
+        assert mock_sleep.called
+        assert result["status_code"] == 200
+        assert result["body_preview"] == "OK"
+
+    @patch("src.interrogate.fetchers.requests.get")
+    @patch("src.interrogate.fetchers.time.sleep")
+    def test_crawl_delay_sleep(self, mock_sleep, mock_get):
+        # Mock robots with crawl-delay
+        mock_robots_response = MagicMock()
+        mock_robots_response.status_code = 200
+        mock_robots_response.text = "User-agent: *\nDisallow: /admin\nCrawl-delay: 5\n"
+        # Mock main
+        mock_main_response = MagicMock()
+        mock_main_response.status_code = 200
+        mock_main_response.url = "https://example.com"
+        mock_main_response.headers = {}
+        mock_main_response.iter_content.return_value = iter([b"OK"])
+        mock_get.side_effect = [mock_robots_response, mock_main_response]
+
+        result = fetch_url_info("https://example.com", include_body=True)
+
+        mock_sleep.assert_called_with(5.0)
+        assert result["status_code"] == 200
 
 
 class TestFetchUrlInfoFlags:

@@ -30,3 +30,18 @@ class TestFetchRobotsTxt:
 
         assert "error" in result
         assert "not found" in result["error"]
+
+    @patch("src.interrogate.robots.requests.get")
+    @patch("src.interrogate.robots.time.sleep")
+    def test_robots_retry_on_429(self, mock_sleep, mock_get):
+        mock_429_response = MagicMock()
+        mock_429_response.status_code = 429
+        mock_200_response = MagicMock()
+        mock_200_response.status_code = 200
+        mock_200_response.text = "user-agent: *\ndisallow: /private"
+        mock_get.side_effect = [mock_429_response, mock_200_response]
+
+        result = fetch_robots_txt("https://example.com")
+
+        assert mock_sleep.called
+        assert "disallowed" in result
