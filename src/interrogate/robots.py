@@ -1,7 +1,7 @@
 from typing import Dict, Any
 import requests
-import time
 from urllib.parse import urljoin
+from .utils import retry_get
 
 
 def fetch_robots_txt(url: str) -> Dict[str, Any]:
@@ -11,24 +11,14 @@ def fetch_robots_txt(url: str) -> Dict[str, Any]:
     """
     try:
         robots_url = urljoin(url, "/robots.txt")
-        response = requests.get(
+        response = retry_get(
             robots_url,
-            timeout=10,
-            allow_redirects=True,
             headers={
                 "User-Agent": "Interrogate/1.0 (+https://github.com/inkyvoxel/interrogate)"
             },
+            timeout=10,
+            allow_redirects=True,
         )
-        if response.status_code in [429, 503]:
-            time.sleep(2)
-            response = requests.get(
-                robots_url,
-                timeout=10,
-                allow_redirects=True,
-                headers={
-                    "User-Agent": "Interrogate/1.0 (+https://github.com/inkyvoxel/interrogate)"
-                },
-            )
         if response.status_code != 200:
             return {"error": f"robots.txt not found (status {response.status_code})"}
         raw = response.text

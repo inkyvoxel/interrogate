@@ -4,6 +4,7 @@ import time
 from .validators import validate_url
 from .tech_detector import detect_technologies
 from .robots import fetch_robots_txt
+from .utils import retry_get
 
 
 def fetch_url_info(
@@ -30,26 +31,15 @@ def fetch_url_info(
             time.sleep(robots_info["crawl_delay"])
 
     try:
-        response = requests.get(
+        response = retry_get(
             url,
-            timeout=10,
-            allow_redirects=True,
             headers={
                 "User-Agent": "Interrogate/1.0 (+https://github.com/inkyvoxel/interrogate)"
             },
+            timeout=10,
+            allow_redirects=True,
             stream=True,
         )
-        if response.status_code in [429, 503]:
-            time.sleep(2)
-            response = requests.get(
-                url,
-                timeout=10,
-                allow_redirects=True,
-                headers={
-                    "User-Agent": "Interrogate/1.0 (+https://github.com/inkyvoxel/interrogate)"
-                },
-                stream=True,
-            )
         headers = dict(response.headers)
         status_code = response.status_code
         final_url = response.url

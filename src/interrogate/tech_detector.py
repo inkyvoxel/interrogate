@@ -1,6 +1,7 @@
 import re
 from typing import Dict, List, Optional, Any
 from bs4 import BeautifulSoup
+from .utils import extract_version
 
 
 def detect_technologies(
@@ -30,7 +31,7 @@ def detect_technologies(
         for name, pattern in server_patterns.items():
             match = pattern.search(server)
             if match:
-                techs.append({"name": name, "version": match.group(1)})
+                techs.append({"name": name, "version": extract_version(match)})
                 break  # Assume only one server
 
     # Define patterns for X-Powered-By
@@ -46,8 +47,7 @@ def detect_technologies(
         for name, pattern in powered_by_patterns.items():
             match = pattern.search(powered_by)
             if match:
-                version = match.group(1) if match.groups() and match.group(1) else None
-                techs.append({"name": name, "version": version})
+                techs.append({"name": name, "version": extract_version(match)})
                 break  # Assume one primary runtime
 
     # X-Generator for WordPress
@@ -57,8 +57,7 @@ def detect_technologies(
             r"\bWordPress(?: (\d+(?:\.\d+)*))?", generator, re.IGNORECASE
         )
         if wp_match:
-            version = wp_match.group(1) if wp_match.group(1) else None
-            techs.append({"name": "WordPress", "version": version})
+            techs.append({"name": "WordPress", "version": extract_version(wp_match)})
 
     # CDN detection with prioritization
     # Order: specific headers first, then server strings
@@ -174,29 +173,32 @@ def detect_technologies(
                 content = str(meta.get("content", "")).lower()
                 if name == "generator":
                     if "wordpress" in content:
-                        version = re.search(r"(\d+(?:\.\d+)*)", content)
-                        techs.append(
-                            {
-                                "name": "WordPress",
-                                "version": version.group(1) if version else None,
-                            }
-                        )
+                        version_match = re.search(r"(\d+(?:\.\d+)*)", content)
+                        if version_match:
+                            techs.append(
+                                {
+                                    "name": "WordPress",
+                                    "version": extract_version(version_match),
+                                }
+                            )
                     elif "joomla" in content:
-                        version = re.search(r"(\d+(?:\.\d+)*)", content)
-                        techs.append(
-                            {
-                                "name": "Joomla",
-                                "version": version.group(1) if version else None,
-                            }
-                        )
+                        version_match = re.search(r"(\d+(?:\.\d+)*)", content)
+                        if version_match:
+                            techs.append(
+                                {
+                                    "name": "Joomla",
+                                    "version": extract_version(version_match),
+                                }
+                            )
                     elif "drupal" in content:
-                        version = re.search(r"(\d+(?:\.\d+)*)", content)
-                        techs.append(
-                            {
-                                "name": "Drupal",
-                                "version": version.group(1) if version else None,
-                            }
-                        )
+                        version_match = re.search(r"(\d+(?:\.\d+)*)", content)
+                        if version_match:
+                            techs.append(
+                                {
+                                    "name": "Drupal",
+                                    "version": extract_version(version_match),
+                                }
+                            )
                     elif "wix" in content:
                         techs.append({"name": "Wix", "version": None})
                     elif "squarespace" in content:
@@ -207,61 +209,67 @@ def detect_technologies(
             for script in scripts:
                 src = str(script["src"]).lower()
                 if "jquery" in src:
-                    version = re.search(r"jquery-(\d+(?:\.\d+)*)", src)
-                    techs.append(
-                        {
-                            "name": "jQuery",
-                            "version": version.group(1) if version else None,
-                        }
-                    )
+                    version_match = re.search(r"jquery-(\d+(?:\.\d+)*)", src)
+                    if version_match:
+                        techs.append(
+                            {
+                                "name": "jQuery",
+                                "version": extract_version(version_match),
+                            }
+                        )
                 elif "react" in src or "__next_data__" in limited_body:
-                    version = re.search(
+                    version_match = re.search(
                         r"react(?:\.|@)(\d+(?:\.\d+)*)", src
                     ) or re.search(r'"version":"(\d+(?:\.\d+)*)"', limited_body)
-                    techs.append(
-                        {
-                            "name": "React",
-                            "version": version.group(1) if version else None,
-                        }
-                    )
+                    if version_match:
+                        techs.append(
+                            {
+                                "name": "React",
+                                "version": extract_version(version_match),
+                            }
+                        )
                 elif "vue" in src:
-                    version = re.search(r"vue(?:\.|@)(\d+(?:\.\d+)*)", src)
-                    techs.append(
-                        {
-                            "name": "Vue.js",
-                            "version": version.group(1) if version else None,
-                        }
-                    )
+                    version_match = re.search(r"vue(?:\.|@)(\d+(?:\.\d+)*)", src)
+                    if version_match:
+                        techs.append(
+                            {
+                                "name": "Vue.js",
+                                "version": extract_version(version_match),
+                            }
+                        )
                 elif "angular" in src:
-                    version = re.search(r"angularjs/(\d+(?:\.\d+)*)", src) or re.search(
-                        r"angular(?:\.|@)(\d+(?:\.\d+)*)", src
-                    )
-                    techs.append(
-                        {
-                            "name": "Angular",
-                            "version": version.group(1) if version else None,
-                        }
-                    )
+                    version_match = re.search(
+                        r"angularjs/(\d+(?:\.\d+)*)", src
+                    ) or re.search(r"angular(?:\.|@)(\d+(?:\.\d+)*)", src)
+                    if version_match:
+                        techs.append(
+                            {
+                                "name": "Angular",
+                                "version": extract_version(version_match),
+                            }
+                        )
                 elif "alpine" in src:
-                    version = re.search(r"alpinejs@(\d+(?:\.\d+)*)", src) or re.search(
-                        r"alpine(?:\.|@)(\d+(?:\.\d+)*)", src
-                    )
-                    techs.append(
-                        {
-                            "name": "Alpine.js",
-                            "version": version.group(1) if version else None,
-                        }
-                    )
+                    version_match = re.search(
+                        r"alpinejs@(\d+(?:\.\d+)*)", src
+                    ) or re.search(r"alpine(?:\.|@)(\d+(?:\.\d+)*)", src)
+                    if version_match:
+                        techs.append(
+                            {
+                                "name": "Alpine.js",
+                                "version": extract_version(version_match),
+                            }
+                        )
                 elif "bootstrap" in src:
-                    version = re.search(r"bootstrap/(\d+(?:\.\d+)*)", src) or re.search(
-                        r"bootstrap(?:\.|@)(\d+(?:\.\d+)*)", src
-                    )
-                    techs.append(
-                        {
-                            "name": "Bootstrap",
-                            "version": version.group(1) if version else None,
-                        }
-                    )
+                    version_match = re.search(
+                        r"bootstrap/(\d+(?:\.\d+)*)", src
+                    ) or re.search(r"bootstrap(?:\.|@)(\d+(?:\.\d+)*)", src)
+                    if version_match:
+                        techs.append(
+                            {
+                                "name": "Bootstrap",
+                                "version": extract_version(version_match),
+                            }
+                        )
                 elif (
                     "googletagmanager" in src or "analytics.js" in src or "gtag" in src
                 ):
