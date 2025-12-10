@@ -5,11 +5,11 @@ This is a Python package project for interrogating URLs, using modern tooling fo
 
 ## Architecture
 - **Package Structure**: Code organized under `src/interrogate/` as a proper Python package for distribution and reusability
-- **Entry Points**: 
+- **Entry Points**:
   - `main.py`: Development wrapper that imports from the package
   - `src/interrogate/__main__.py`: Main CLI logic with argument parsing
   - `pyproject.toml` defines `interrogate` console script pointing to `interrogate.__main__:main`
-- **Core Components**: 
+- **Core Components**:
   - `validators.py`: URL validation utilities using `urllib.parse`
   - `fetchers.py`: HTTP fetching and orchestrating technology detection and robots.txt parsing
   - `tech_detector.py`: Technology detection via headers and body regex patterns

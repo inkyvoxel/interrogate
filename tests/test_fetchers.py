@@ -23,10 +23,10 @@ class TestFetchUrlInfo:
         assert result["status_code"] == 200
         assert result["final_url"] == "https://example.com"
         assert "Server" in result["headers"]
-        assert "Nginx" in result["technologies"]
-        assert "PHP" in result["technologies"]
-        assert "jQuery" in result["technologies"]
-        assert "WordPress" in result["technologies"]
+        assert {"name": "Nginx", "version": None} in result["technologies"]
+        assert {"name": "PHP", "version": None} in result["technologies"]
+        assert {"name": "jQuery", "version": None} in result["technologies"]
+        assert {"name": "WordPress", "version": None} in result["technologies"]
         assert (
             result["body_preview"]
             == "<html><script src='jquery.js'></script>WordPress site</html>"
